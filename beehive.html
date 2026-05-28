@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Beehive Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #fff7d6, #ffe29a);
+      color: #2c2105;
+    }
+
+    .app {
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .bee-icon {
+      font-size: 54px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      color: #6b5a25;
+      font-size: 15px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 22px;
+      padding: 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 10px 25px rgba(80, 55, 0, 0.15);
+    }
+
+    .status-card {
+      text-align: center;
+    }
+
+    .status-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+      background: #c7c7c7;
+      vertical-align: middle;
+    }
+
+    .connected {
+      background: #2ecc71;
+    }
+
+    .warning {
+      background: #f39c12;
+    }
+
+    .error {
+      background: #e74c3c;
+    }
+
+    .status-text {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    button {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 16px;
+      background: #f5a400;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(120, 80, 0, 0.2);
+    }
+
+    button:hover {
+      background: #e69500;
+    }
+
+    .data-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .data-box {
+      background: #fff8df;
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .label {
+      font-size: 13px;
+      color: #7b6a2e;
+      margin-bottom: 6px;
+    }
+
+    .value {
+      font-size: 25px;
+      font-weight: bold;
+    }
+
+    .large-status {
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      padding: 18px;
+      border-radius: 16px;
+      background: #eefaf1;
+      color: #1b7f3a;
+    }
+
+    .large-status.bad {
+      background: #fff1e8;
+      color: #c0392b;
+    }
+
+    .large-status.waiting {
+      background: #f4f4f4;
+      color: #777;
+    }
+
+    .help-text {
+      font-size: 14px;
+      color: #6b5a25;
+      line-height: 1.5;
+    }
+
+    .raw-data {
+      font-size: 12px;
+      color: #777;
+      word-break: break-word;
+      background: #f7f7f7;
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="bee-icon">🐝</div>
+      <h1>Beehive Monitor</h1>
+      <div class="subtitle">Simple hive health updates from your Raspberry Pi</div>
+    </div>
+
+    <div class="card status-card">
+      <p>
+        <span id="statusDot" class="status-dot"></span>
+        <span id="statusText" class="status-text">Not connected</span>
+      </p>
+
+      <button id="connectBtn">Connect to Hive Sensor</button>
+    </div>
+
+    <div class="card">
+      <h2>Hive Status</h2>
+      <div id="hiveStatus" class="large-status waiting">Waiting for data</div>
+    </div>
+
+    <div class="card">
+      <h2>Temperature</h2>
+
+      <div class="data-grid">
+        <div class="data-box">
+          <div class="label">Warmest Area</div>
+          <div id="maxTemp" class="value">-- °C</div>
+        </div>
+
+        <div class="data-box">
+          <div class="label">Coolest Area</div>
+          <div id="minTemp" class="value">-- °C</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>What this means</h2>
+      <p id="userMessage" class="help-text">
+        Press connect to begin receiving hive data.
+      </p>
+
+      <div class="raw-data">
+        Raw sensor message:
+        <br>
+        <span id="rawData">None yet</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SERVICE_UUID = "12345678-1234-5678-1234-56789abcdef0";
+    const CHAR_UUID = "abcdef01-1234-5678-1234-56789abcdef0";
+
+    const connectBtn = document.getElementById("connectBtn");
+    const statusDot = document.getElementById("statusDot");
+    const statusText = document.getElementById("statusText");
+    const rawData = document.getElementById("rawData");
+
+    const hiveStatus = document.getElementById("hiveStatus");
+    const maxTempBox = document.getElementById("maxTemp");
+    const minTempBox = document.getElementById("minTemp");
+    const userMessage = document.getElementById("userMessage");
+
+    function setConnectionStatus(type, message) {
+      statusDot.className = "status-dot";
+
+      if (type === "connected") {
+        statusDot.classList.add("connected");
+      } else if (type === "warning") {
+        statusDot.classList.add("warning");
+      } else if (type === "error") {
+        statusDot.classList.add("error");
+      }
+
+      statusText.textContent = message;
+    }
+
+    function parseSensorMessage(message) {
+      const result = {};
+
+      const parts = message.split(";");
+
+      parts.forEach(part => {
+        const pieces = part.split("=");
+
+        if (pieces.length === 2) {
+          const key = pieces[0].trim();
+          const value = pieces[1].trim();
+          result[key] = value;
+        }
+      });
+
+      return result;
+    }
+
+    function updateUserDisplay(message) {
+      rawData.textContent = message;
+
+      const data = parseSensorMessage(message);
+
+      if (data.MAX_TEMP) {
+        maxTempBox.textContent = Number(data.MAX_TEMP).toFixed(1) + " °C";
+      }
+
+      if (data.MIN_TEMP) {
+        minTempBox.textContent = Number(data.MIN_TEMP).toFixed(1) + " °C";
+      }
+
+      const hotspot = data.HOTSPOT;
+
+      if (hotspot === "YES") {
+        hiveStatus.textContent = "Hot Area Detected";
+        hiveStatus.className = "large-status bad";
+
+        userMessage.textContent =
+          "One area of the hive is warmer than expected. This may be normal if brood is present, but it may also mean you should inspect the frame or compare it with another reading.";
+      } else if (hotspot === "NO") {
+        hiveStatus.textContent = "Hive Looks Stable";
+        hiveStatus.className = "large-status";
+
+        userMessage.textContent =
+          "The temperature pattern looks stable. No unusual hot area was reported by the sensor.";
+      } else {
+        hiveStatus.textContent = "Reading Hive Data";
+        hiveStatus.className = "large-status waiting";
+
+        userMessage.textContent =
+          "The app is receiving data, but the hive condition has not been classified yet.";
+      }
+    }
+
+    function friendlyError(error) {
+      const text = String(error);
+
+      if (text.includes("User cancelled")) {
+        return "Connection was cancelled. Press the button again when you are ready.";
+      }
+
+      if (text.includes("Bluetooth adapter not available")) {
+        return "Bluetooth is turned off or unavailable on this computer.";
+      }
+
+      if (text.includes("No Services matching")) {
+        return "The hive sensor was found, but it is not sending the expected data format.";
+      }
+
+      if (text.includes("NetworkError")) {
+        return "The connection was lost. Move closer to the Raspberry Pi and try again.";
+      }
+
+      if (text.includes("NotFoundError")) {
+        return "No hive sensor was selected. Make sure BeeMonitor is running on the Raspberry Pi.";
+      }
+
+      return "Something went wrong while connecting. Restart the Raspberry Pi Bluetooth program and try again.";
+    }
+
+    connectBtn.addEventListener("click", async () => {
+      try {
+        setConnectionStatus("warning", "Searching for hive sensor...");
+
+        const device = await navigator.bluetooth.requestDevice({
+          filters: [{ name: "BeeMonitor" }],
+          optionalServices: [SERVICE_UUID]
+        });
+
+        setConnectionStatus("warning", "Connecting...");
+
+        device.addEventListener("gattserverdisconnected", () => {
+          setConnectionStatus("error", "Disconnected");
+          userMessage.textContent =
+            "The hive sensor disconnected. Move closer to the Raspberry Pi or restart the Bluetooth program.";
+        });
+
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService(SERVICE_UUID);
+        const characteristic = await service.getCharacteristic(CHAR_UUID);
+
+        setConnectionStatus("connected", "Connected to hive sensor");
+
+        const value = await characteristic.readValue();
+        const firstMessage = new TextDecoder().decode(value);
+        updateUserDisplay(firstMessage);
+
+        await characteristic.startNotifications();
+
+        characteristic.addEventListener("characteristicvaluechanged", event => {
+          const value = event.target.value;
+          const message = new TextDecoder().decode(value);
+          updateUserDisplay(message);
+        });
+
+      } catch (error) {
+        console.error(error);
+
+        setConnectionStatus("error", "Connection problem");
+        userMessage.textContent = friendlyError(error);
+      }
+    });
+  </script>
+</body>
+</html>
