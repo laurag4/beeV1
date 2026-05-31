@@ -98,6 +98,11 @@
       background: #e69500;
     }
 
+    button:disabled {
+      background: #c7c7c7;
+      cursor: not-allowed;
+    }
+
     .data-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -226,6 +231,9 @@
     const minTempBox = document.getElementById("minTemp");
     const userMessage = document.getElementById("userMessage");
 
+    let bluetoothDevice = null;
+    let sensorCharacteristic = null;
+
     function setConnectionStatus(type, message) {
       statusDot.className = "status-dot";
 
@@ -242,7 +250,6 @@
 
     function parseSensorMessage(message) {
       const result = {};
-
       const parts = message.split(";");
 
       parts.forEach(part => {
@@ -263,11 +270,11 @@
 
       const data = parseSensorMessage(message);
 
-      if (data.MAX_TEMP) {
+      if (data.MAX_TEMP && !isNaN(Number(data.MAX_TEMP))) {
         maxTempBox.textContent = Number(data.MAX_TEMP).toFixed(1) + " °C";
       }
 
-      if (data.MIN_TEMP) {
+      if (data.MIN_TEMP && !isNaN(Number(data.MIN_TEMP))) {
         minTempBox.textContent = Number(data.MIN_TEMP).toFixed(1) + " °C";
       }
 
@@ -302,7 +309,7 @@
       }
 
       if (text.includes("Bluetooth adapter not available")) {
-        return "Bluetooth is turned off or unavailable on this computer.";
+        return "Bluetooth is turned off or unavailable on this device.";
       }
 
       if (text.includes("No Services matching")) {
@@ -317,51 +324,97 @@
         return "No hive sensor was selected. Make sure BeeMonitor is running on the Raspberry Pi.";
       }
 
+      if (text.includes("NotSupportedError")) {
+        return "This browser does not support Bluetooth. Open this page in Bluefy on the iPhone.";
+      }
+
       return "Something went wrong while connecting. Restart the Raspberry Pi Bluetooth program and try again.";
     }
 
-    connectBtn.addEventListener("click", async () => {
+    function handleDisconnect() {
+      setConnectionStatus("error", "Disconnected");
+
+      connectBtn.disabled = false;
+      connectBtn.textContent = "Reconnect to Hive Sensor";
+
+      userMessage.textContent =
+        "The hive sensor disconnected. Move closer to the Raspberry Pi or restart the Bluetooth program.";
+    }
+
+    async function connectToHiveSensor() {
       try {
+        connectBtn.disabled = true;
+        connectBtn.textContent = "Connecting...";
+
+        if (!navigator.bluetooth) {
+          throw new Error("NotSupportedError: Bluetooth is not supported in this browser.");
+        }
+
         setConnectionStatus("warning", "Searching for hive sensor...");
 
-        const device = await navigator.bluetooth.requestDevice({
+        bluetoothDevice = await navigator.bluetooth.requestDevice({
           filters: [{ name: "BeeMonitor" }],
           optionalServices: [SERVICE_UUID]
         });
 
+        bluetoothDevice.addEventListener("gattserverdisconnected", handleDisconnect);
+
         setConnectionStatus("warning", "Connecting...");
 
-        device.addEventListener("gattserverdisconnected", () => {
-          setConnectionStatus("error", "Disconnected");
-          userMessage.textContent =
-            "The hive sensor disconnected. Move closer to the Raspberry Pi or restart the Bluetooth program.";
-        });
+        const server = await bluetoothDevice.gatt.connect();
 
-        const server = await device.gatt.connect();
+        setConnectionStatus("warning", "Finding hive data service...");
+
         const service = await server.getPrimaryService(SERVICE_UUID);
-        const characteristic = await service.getCharacteristic(CHAR_UUID);
+
+        setConnectionStatus("warning", "Starting hive data updates...");
+
+        sensorCharacteristic = await service.getCharacteristic(CHAR_UUID);
 
         setConnectionStatus("connected", "Connected to hive sensor");
 
-        const value = await characteristic.readValue();
-        const firstMessage = new TextDecoder().decode(value);
-        updateUserDisplay(firstMessage);
+        userMessage.textContent =
+          "Connected. Waiting for the Raspberry Pi to send hive data.";
 
-        await characteristic.startNotifications();
+        /*
+          Some BLE characteristics support READ + NOTIFY.
+          Some only support NOTIFY.
+          This try/catch keeps the app from failing if READ is not supported.
+        */
+        try {
+          const value = await sensorCharacteristic.readValue();
+          const firstMessage = new TextDecoder().decode(value);
 
-        characteristic.addEventListener("characteristicvaluechanged", event => {
+          if (firstMessage.trim().length > 0) {
+            updateUserDisplay(firstMessage);
+          }
+        } catch (readError) {
+          console.log("Initial read not available. Waiting for notifications...");
+        }
+
+        await sensorCharacteristic.startNotifications();
+
+        sensorCharacteristic.addEventListener("characteristicvaluechanged", event => {
           const value = event.target.value;
           const message = new TextDecoder().decode(value);
           updateUserDisplay(message);
         });
 
+        connectBtn.textContent = "Connected";
+
       } catch (error) {
         console.error(error);
 
         setConnectionStatus("error", "Connection problem");
+
         userMessage.textContent = friendlyError(error);
+
+        connectBtn.disabled = false;
+        connectBtn.textContent = "Try Again";
       }
-    });
+    }
+
+    connectBtn.addEventListener("click", connectToHiveSensor);
   </script>
 </body>
 </html>
