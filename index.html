@@ -132,10 +132,6 @@
       font-weight: bold;
     }
 
-    .small-value {
-      font-size: 20px;
-    }
-
     .large-status {
       text-align: center;
       font-size: 22px;
@@ -327,7 +323,7 @@
       </p>
 
       <div class="raw-data">
-        Raw sensor message:
+        Latest BLE message:
         <br>
         <span id="rawData">None yet</span>
       </div>
@@ -365,6 +361,14 @@
     const clipLow = document.getElementById("clipLow");
     const clipHigh = document.getElementById("clipHigh");
     const rawHotspot = document.getElementById("rawHotspot");
+
+    /*
+      This is the important fix.
+
+      The Pi now sends several shorter BLE messages.
+      This object remembers values from previous messages.
+    */
+    let latestData = {};
 
     function setConnectionStatus(type, message) {
       statusDot.className = "status-dot";
@@ -425,7 +429,18 @@
     function updateUserDisplay(message) {
       rawData.textContent = message;
 
-      const data = parseSensorMessage(message);
+      const newData = parseSensorMessage(message);
+
+      /*
+        Merge the new short BLE message into all previous values.
+        This prevents later boxes from disappearing when a short message arrives.
+      */
+      latestData = {
+        ...latestData,
+        ...newData
+      };
+
+      const data = latestData;
 
       setNumber(maxTempBox, data.MAX_TEMP, 1, " °C");
       setNumber(minTempBox, data.MIN_TEMP, 1, " °C");
@@ -451,7 +466,12 @@
       setInteger(rawDiff, data.RAW_DIFF);
       setNumber(clipLow, data.CLIP_LOW, 2, " °C");
       setNumber(clipHigh, data.CLIP_HIGH, 2, " °C");
-      rawHotspot.textContent = data.RAW_HOTSPOT || "--";
+
+      if (data.RAW_HOTSPOT) {
+        rawHotspot.textContent = data.RAW_HOTSPOT;
+      } else {
+        rawHotspot.textContent = "--";
+      }
 
       const hotspot = data.HOTSPOT;
       const miteCount = numberOrNull(data.MITE_COUNT);
@@ -473,7 +493,7 @@
         hiveStatus.className = "large-status waiting";
 
         userMessage.textContent =
-          "The app is receiving data, but the hive condition has not been classified yet.";
+          "The app is connected and waiting for the Raspberry Pi to send analysis data.";
       }
     }
 
@@ -526,10 +546,10 @@
 
         setConnectionStatus("connected", "Connected to hive sensor");
 
-        const value = await characteristic.readValue();
-        const firstMessage = new TextDecoder().decode(value);
-        updateUserDisplay(firstMessage);
-
+        /*
+          Do not read immediately.
+          The website should stay connected even if the C program has not sent data yet.
+        */
         await characteristic.startNotifications();
 
         characteristic.addEventListener("characteristicvaluechanged", event => {
@@ -537,6 +557,9 @@
           const message = new TextDecoder().decode(value);
           updateUserDisplay(message);
         });
+
+        userMessage.textContent =
+          "Connected. Waiting for the Raspberry Pi to send hive data.";
 
       } catch (error) {
         console.error(error);
