@@ -14,7 +14,7 @@
     }
 
     .app {
-      max-width: 430px;
+      max-width: 480px;
       margin: 0 auto;
       min-height: 100vh;
       padding: 24px;
@@ -34,6 +34,12 @@
     h1 {
       margin: 0;
       font-size: 30px;
+    }
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 14px;
+      font-size: 21px;
     }
 
     .subtitle {
@@ -98,11 +104,6 @@
       background: #e69500;
     }
 
-    button:disabled {
-      background: #c7c7c7;
-      cursor: not-allowed;
-    }
-
     .data-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -116,6 +117,10 @@
       text-align: center;
     }
 
+    .wide-box {
+      grid-column: span 2;
+    }
+
     .label {
       font-size: 13px;
       color: #7b6a2e;
@@ -123,8 +128,12 @@
     }
 
     .value {
-      font-size: 25px;
+      font-size: 24px;
       font-weight: bold;
+    }
+
+    .small-value {
+      font-size: 20px;
     }
 
     .large-status {
@@ -162,6 +171,35 @@
       border-radius: 10px;
       margin-top: 10px;
     }
+
+    .parameter-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .parameter-table tr {
+      border-bottom: 1px solid #f0e1aa;
+    }
+
+    .parameter-table tr:last-child {
+      border-bottom: none;
+    }
+
+    .parameter-table td {
+      padding: 9px 2px;
+      vertical-align: top;
+    }
+
+    .parameter-table td:first-child {
+      color: #7b6a2e;
+      width: 62%;
+    }
+
+    .parameter-table td:last-child {
+      text-align: right;
+      font-weight: bold;
+    }
   </style>
 </head>
 
@@ -188,7 +226,7 @@
     </div>
 
     <div class="card">
-      <h2>Temperature</h2>
+      <h2>Main Results</h2>
 
       <div class="data-grid">
         <div class="data-box">
@@ -200,7 +238,86 @@
           <div class="label">Coolest Area</div>
           <div id="minTemp" class="value">-- °C</div>
         </div>
+
+        <div class="data-box wide-box">
+          <div class="label">Estimated Mite / Infected Cell Count</div>
+          <div id="miteCount" class="value">--</div>
+        </div>
       </div>
+    </div>
+
+    <div class="card">
+      <h2>Cell Analysis Parameters</h2>
+
+      <table class="parameter-table">
+        <tr>
+          <td>Normal brood temperature</td>
+          <td id="normalBroodTemp">-- °C</td>
+        </tr>
+        <tr>
+          <td>Measured average cell temperature</td>
+          <td id="measuredAvgCellTemp">-- °C</td>
+        </tr>
+        <tr>
+          <td>Normalization offset</td>
+          <td id="normalizationOffset">-- °C</td>
+        </tr>
+        <tr>
+          <td>Normalized average cell temperature</td>
+          <td id="normalizedAvgCellTemp">-- °C</td>
+        </tr>
+        <tr>
+          <td>Infected low threshold</td>
+          <td id="infectedLowThreshold">-- °C</td>
+        </tr>
+        <tr>
+          <td>Infected high threshold</td>
+          <td id="infectedHighThreshold">-- °C</td>
+        </tr>
+        <tr>
+          <td>Minimum 90th-percentile cell difference</td>
+          <td id="minCellHotDiff">-- °C</td>
+        </tr>
+        <tr>
+          <td>Maximum 90th-percentile cell difference</td>
+          <td id="maxCellHotDiff">-- °C</td>
+        </tr>
+        <tr>
+          <td>Cell grid size</td>
+          <td id="cellGrid">--</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Raw Sensor Parameters</h2>
+
+      <table class="parameter-table">
+        <tr>
+          <td>Raw minimum</td>
+          <td id="rawMin">--</td>
+        </tr>
+        <tr>
+          <td>Raw maximum</td>
+          <td id="rawMax">--</td>
+        </tr>
+        <tr>
+          <td>Raw difference</td>
+          <td id="rawDiff">--</td>
+        </tr>
+        <tr>
+          <td>2% display clipping temperature</td>
+          <td id="clipLow">-- °C</td>
+        </tr>
+        <tr>
+          <td>98% display clipping temperature</td>
+          <td id="clipHigh">-- °C</td>
+        </tr>
+        <tr>
+          <td>Raw hotspot check</td>
+          <td id="rawHotspot">--</td>
+        </tr>
+      </table>
     </div>
 
     <div class="card">
@@ -229,10 +346,25 @@
     const hiveStatus = document.getElementById("hiveStatus");
     const maxTempBox = document.getElementById("maxTemp");
     const minTempBox = document.getElementById("minTemp");
+    const miteCountBox = document.getElementById("miteCount");
     const userMessage = document.getElementById("userMessage");
 
-    let bluetoothDevice = null;
-    let sensorCharacteristic = null;
+    const normalBroodTemp = document.getElementById("normalBroodTemp");
+    const measuredAvgCellTemp = document.getElementById("measuredAvgCellTemp");
+    const normalizationOffset = document.getElementById("normalizationOffset");
+    const normalizedAvgCellTemp = document.getElementById("normalizedAvgCellTemp");
+    const infectedLowThreshold = document.getElementById("infectedLowThreshold");
+    const infectedHighThreshold = document.getElementById("infectedHighThreshold");
+    const minCellHotDiff = document.getElementById("minCellHotDiff");
+    const maxCellHotDiff = document.getElementById("maxCellHotDiff");
+    const cellGrid = document.getElementById("cellGrid");
+
+    const rawMin = document.getElementById("rawMin");
+    const rawMax = document.getElementById("rawMax");
+    const rawDiff = document.getElementById("rawDiff");
+    const clipLow = document.getElementById("clipLow");
+    const clipHigh = document.getElementById("clipHigh");
+    const rawHotspot = document.getElementById("rawHotspot");
 
     function setConnectionStatus(type, message) {
       statusDot.className = "status-dot";
@@ -250,7 +382,7 @@
 
     function parseSensorMessage(message) {
       const result = {};
-      const parts = message.split(";");
+      const parts = message.trim().split(";");
 
       parts.forEach(part => {
         const pieces = part.split("=");
@@ -265,33 +397,77 @@
       return result;
     }
 
+    function numberOrNull(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function setNumber(element, value, decimals, suffix = "") {
+      const n = numberOrNull(value);
+
+      if (n === null) {
+        element.textContent = "--" + suffix;
+      } else {
+        element.textContent = n.toFixed(decimals) + suffix;
+      }
+    }
+
+    function setInteger(element, value) {
+      const n = numberOrNull(value);
+
+      if (n === null) {
+        element.textContent = "--";
+      } else {
+        element.textContent = String(Math.round(n));
+      }
+    }
+
     function updateUserDisplay(message) {
       rawData.textContent = message;
 
       const data = parseSensorMessage(message);
 
-      if (data.MAX_TEMP && !isNaN(Number(data.MAX_TEMP))) {
-        maxTempBox.textContent = Number(data.MAX_TEMP).toFixed(1) + " °C";
+      setNumber(maxTempBox, data.MAX_TEMP, 1, " °C");
+      setNumber(minTempBox, data.MIN_TEMP, 1, " °C");
+      setInteger(miteCountBox, data.MITE_COUNT);
+
+      setNumber(normalBroodTemp, data.NORMAL_BROOD_TEMP, 2, " °C");
+      setNumber(measuredAvgCellTemp, data.MEASURED_AVG_CELL_TEMP, 2, " °C");
+      setNumber(normalizationOffset, data.NORMALIZATION_OFFSET, 2, " °C");
+      setNumber(normalizedAvgCellTemp, data.NORMALIZED_AVG_CELL_TEMP, 2, " °C");
+      setNumber(infectedLowThreshold, data.INFECTED_LOW_THRESHOLD, 2, " °C");
+      setNumber(infectedHighThreshold, data.INFECTED_HIGH_THRESHOLD, 2, " °C");
+      setNumber(minCellHotDiff, data.MIN_CELL_HOT_DIFF, 2, " °C");
+      setNumber(maxCellHotDiff, data.MAX_CELL_HOT_DIFF, 2, " °C");
+
+      if (data.CELL_ROWS && data.CELL_COLS) {
+        cellGrid.textContent = data.CELL_ROWS + " rows × " + data.CELL_COLS + " columns";
+      } else {
+        cellGrid.textContent = "--";
       }
 
-      if (data.MIN_TEMP && !isNaN(Number(data.MIN_TEMP))) {
-        minTempBox.textContent = Number(data.MIN_TEMP).toFixed(1) + " °C";
-      }
+      setInteger(rawMin, data.RAW_MIN);
+      setInteger(rawMax, data.RAW_MAX);
+      setInteger(rawDiff, data.RAW_DIFF);
+      setNumber(clipLow, data.CLIP_LOW, 2, " °C");
+      setNumber(clipHigh, data.CLIP_HIGH, 2, " °C");
+      rawHotspot.textContent = data.RAW_HOTSPOT || "--";
 
       const hotspot = data.HOTSPOT;
+      const miteCount = numberOrNull(data.MITE_COUNT);
 
-      if (hotspot === "YES") {
-        hiveStatus.textContent = "Hot Area Detected";
+      if (hotspot === "YES" || (miteCount !== null && miteCount > 0)) {
+        hiveStatus.textContent = "Possible Problem Area Detected";
         hiveStatus.className = "large-status bad";
 
         userMessage.textContent =
-          "One area of the hive is warmer than expected. This may be normal if brood is present, but it may also mean you should inspect the frame or compare it with another reading.";
+          "The Raspberry Pi found cells with a 90th-percentile temperature difference inside the selected range. This is an estimate, so compare it with another reading and inspect the frame before making a conclusion.";
       } else if (hotspot === "NO") {
         hiveStatus.textContent = "Hive Looks Stable";
         hiveStatus.className = "large-status";
 
         userMessage.textContent =
-          "The temperature pattern looks stable. No unusual hot area was reported by the sensor.";
+          "The cell-based temperature analysis did not find cells inside the selected infected range for this reading.";
       } else {
         hiveStatus.textContent = "Reading Hive Data";
         hiveStatus.className = "large-status waiting";
@@ -309,7 +485,7 @@
       }
 
       if (text.includes("Bluetooth adapter not available")) {
-        return "Bluetooth is turned off or unavailable on this device.";
+        return "Bluetooth is turned off or unavailable on this computer.";
       }
 
       if (text.includes("No Services matching")) {
@@ -324,97 +500,51 @@
         return "No hive sensor was selected. Make sure BeeMonitor is running on the Raspberry Pi.";
       }
 
-      if (text.includes("NotSupportedError")) {
-        return "This browser does not support Bluetooth. Open this page in Bluefy on the iPhone.";
-      }
-
       return "Something went wrong while connecting. Restart the Raspberry Pi Bluetooth program and try again.";
     }
 
-    function handleDisconnect() {
-      setConnectionStatus("error", "Disconnected");
-
-      connectBtn.disabled = false;
-      connectBtn.textContent = "Reconnect to Hive Sensor";
-
-      userMessage.textContent =
-        "The hive sensor disconnected. Move closer to the Raspberry Pi or restart the Bluetooth program.";
-    }
-
-    async function connectToHiveSensor() {
+    connectBtn.addEventListener("click", async () => {
       try {
-        connectBtn.disabled = true;
-        connectBtn.textContent = "Connecting...";
-
-        if (!navigator.bluetooth) {
-          throw new Error("NotSupportedError: Bluetooth is not supported in this browser.");
-        }
-
         setConnectionStatus("warning", "Searching for hive sensor...");
 
-        bluetoothDevice = await navigator.bluetooth.requestDevice({
+        const device = await navigator.bluetooth.requestDevice({
           filters: [{ name: "BeeMonitor" }],
           optionalServices: [SERVICE_UUID]
         });
 
-        bluetoothDevice.addEventListener("gattserverdisconnected", handleDisconnect);
-
         setConnectionStatus("warning", "Connecting...");
 
-        const server = await bluetoothDevice.gatt.connect();
+        device.addEventListener("gattserverdisconnected", () => {
+          setConnectionStatus("error", "Disconnected");
+          userMessage.textContent =
+            "The hive sensor disconnected. Move closer to the Raspberry Pi or restart the Bluetooth program.";
+        });
 
-        setConnectionStatus("warning", "Finding hive data service...");
-
+        const server = await device.gatt.connect();
         const service = await server.getPrimaryService(SERVICE_UUID);
-
-        setConnectionStatus("warning", "Starting hive data updates...");
-
-        sensorCharacteristic = await service.getCharacteristic(CHAR_UUID);
+        const characteristic = await service.getCharacteristic(CHAR_UUID);
 
         setConnectionStatus("connected", "Connected to hive sensor");
 
-        userMessage.textContent =
-          "Connected. Waiting for the Raspberry Pi to send hive data.";
+        const value = await characteristic.readValue();
+        const firstMessage = new TextDecoder().decode(value);
+        updateUserDisplay(firstMessage);
 
-        /*
-          Some BLE characteristics support READ + NOTIFY.
-          Some only support NOTIFY.
-          This try/catch keeps the app from failing if READ is not supported.
-        */
-        try {
-          const value = await sensorCharacteristic.readValue();
-          const firstMessage = new TextDecoder().decode(value);
+        await characteristic.startNotifications();
 
-          if (firstMessage.trim().length > 0) {
-            updateUserDisplay(firstMessage);
-          }
-        } catch (readError) {
-          console.log("Initial read not available. Waiting for notifications...");
-        }
-
-        await sensorCharacteristic.startNotifications();
-
-        sensorCharacteristic.addEventListener("characteristicvaluechanged", event => {
+        characteristic.addEventListener("characteristicvaluechanged", event => {
           const value = event.target.value;
           const message = new TextDecoder().decode(value);
           updateUserDisplay(message);
         });
 
-        connectBtn.textContent = "Connected";
-
       } catch (error) {
         console.error(error);
 
         setConnectionStatus("error", "Connection problem");
-
         userMessage.textContent = friendlyError(error);
-
-        connectBtn.disabled = false;
-        connectBtn.textContent = "Try Again";
       }
-    }
-
-    connectBtn.addEventListener("click", connectToHiveSensor);
+    });
   </script>
 </body>
 </html>
