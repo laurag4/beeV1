@@ -401,101 +401,96 @@
       return result;
     }
 
-    function numberOrNull(value) {
-      const n = Number(value);
-      return Number.isFinite(n) ? n : null;
+   function hasKey(data, key) {
+  return Object.prototype.hasOwnProperty.call(data, key);
+}
+
+function numberOrNull(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function setNumberIfPresent(data, key, element, decimals, suffix = "") {
+  if (!hasKey(data, key)) {
+    return;
+  }
+
+  const n = numberOrNull(data[key]);
+
+  if (n !== null) {
+    element.textContent = n.toFixed(decimals) + suffix;
+  }
+}
+
+function setIntegerIfPresent(data, key, element) {
+  if (!hasKey(data, key)) {
+    return;
+  }
+
+  const n = numberOrNull(data[key]);
+
+  if (n !== null) {
+    element.textContent = String(Math.round(n));
+  }
+}
+
+function setTextIfPresent(data, key, element) {
+  if (!hasKey(data, key)) {
+    return;
+  }
+
+  element.textContent = data[key];
+}
+    
+function updateUserDisplay(message) {
+  rawData.textContent = message;
+
+  const data = parseSensorMessage(message);
+
+  setNumberIfPresent(data, "MAX_TEMP", maxTempBox, 1, " °C");
+  setNumberIfPresent(data, "MIN_TEMP", minTempBox, 1, " °C");
+  setIntegerIfPresent(data, "MITE_COUNT", miteCountBox);
+
+  setNumberIfPresent(data, "NORMAL_BROOD_TEMP", normalBroodTemp, 2, " °C");
+  setNumberIfPresent(data, "MEASURED_AVG_CELL_TEMP", measuredAvgCellTemp, 2, " °C");
+  setNumberIfPresent(data, "NORMALIZATION_OFFSET", normalizationOffset, 2, " °C");
+  setNumberIfPresent(data, "NORMALIZED_AVG_CELL_TEMP", normalizedAvgCellTemp, 2, " °C");
+  setNumberIfPresent(data, "INFECTED_LOW_THRESHOLD", infectedLowThreshold, 2, " °C");
+  setNumberIfPresent(data, "INFECTED_HIGH_THRESHOLD", infectedHighThreshold, 2, " °C");
+  setNumberIfPresent(data, "MIN_CELL_HOT_DIFF", minCellHotDiff, 2, " °C");
+  setNumberIfPresent(data, "MAX_CELL_HOT_DIFF", maxCellHotDiff, 2, " °C");
+
+  setIntegerIfPresent(data, "RAW_MIN", rawMin);
+  setIntegerIfPresent(data, "RAW_MAX", rawMax);
+  setIntegerIfPresent(data, "RAW_DIFF", rawDiff);
+
+  setNumberIfPresent(data, "CLIP_LOW", clipLow, 2, " °C");
+  setNumberIfPresent(data, "CLIP_HIGH", clipHigh, 2, " °C");
+
+  setTextIfPresent(data, "RAW_HOTSPOT", rawHotspot);
+
+  if (hasKey(data, "CELL_ROWS") && hasKey(data, "CELL_COLS")) {
+    cellGrid.textContent = data.CELL_ROWS + " rows × " + data.CELL_COLS + " columns";
+  }
+
+  if (hasKey(data, "HOTSPOT")) {
+    if (data.HOTSPOT === "YES") {
+      hiveStatus.textContent = "Possible Problem Area Detected";
+      hiveStatus.className = "large-status bad";
+
+      userMessage.textContent =
+        "The Raspberry Pi found cells with a 90th-percentile temperature difference inside the selected range. This is an estimate, so compare it with another reading and inspect the frame before making a conclusion.";
+    } else if (data.HOTSPOT === "NO") {
+      hiveStatus.textContent = "Hive Looks Stable";
+      hiveStatus.className = "large-status";
+
+      userMessage.textContent =
+        "The cell-based temperature analysis did not find cells inside the selected infected range for this reading.";
     }
-
-    function setNumber(element, value, decimals, suffix = "") {
-      const n = numberOrNull(value);
-
-      if (n === null) {
-        element.textContent = "--" + suffix;
-      } else {
-        element.textContent = n.toFixed(decimals) + suffix;
-      }
-    }
-
-    function setInteger(element, value) {
-      const n = numberOrNull(value);
-
-      if (n === null) {
-        element.textContent = "--";
-      } else {
-        element.textContent = String(Math.round(n));
-      }
-    }
-
-    function updateUserDisplay(message) {
-      rawData.textContent = message;
-
-      const newData = parseSensorMessage(message);
-
-      /*
-        Merge the new short BLE message into all previous values.
-        This prevents later boxes from disappearing when a short message arrives.
-      */
-      latestData = {
-        ...latestData,
-        ...newData
-      };
-
-      const data = latestData;
-
-      setNumber(maxTempBox, data.MAX_TEMP, 1, " °C");
-      setNumber(minTempBox, data.MIN_TEMP, 1, " °C");
-      setInteger(miteCountBox, data.MITE_COUNT);
-
-      setNumber(normalBroodTemp, data.NORMAL_BROOD_TEMP, 2, " °C");
-      setNumber(measuredAvgCellTemp, data.MEASURED_AVG_CELL_TEMP, 2, " °C");
-      setNumber(normalizationOffset, data.NORMALIZATION_OFFSET, 2, " °C");
-      setNumber(normalizedAvgCellTemp, data.NORMALIZED_AVG_CELL_TEMP, 2, " °C");
-      setNumber(infectedLowThreshold, data.INFECTED_LOW_THRESHOLD, 2, " °C");
-      setNumber(infectedHighThreshold, data.INFECTED_HIGH_THRESHOLD, 2, " °C");
-      setNumber(minCellHotDiff, data.MIN_CELL_HOT_DIFF, 2, " °C");
-      setNumber(maxCellHotDiff, data.MAX_CELL_HOT_DIFF, 2, " °C");
-
-      if (data.CELL_ROWS && data.CELL_COLS) {
-        cellGrid.textContent = data.CELL_ROWS + " rows × " + data.CELL_COLS + " columns";
-      } else {
-        cellGrid.textContent = "--";
-      }
-
-      setInteger(rawMin, data.RAW_MIN);
-      setInteger(rawMax, data.RAW_MAX);
-      setInteger(rawDiff, data.RAW_DIFF);
-      setNumber(clipLow, data.CLIP_LOW, 2, " °C");
-      setNumber(clipHigh, data.CLIP_HIGH, 2, " °C");
-
-      if (data.RAW_HOTSPOT) {
-        rawHotspot.textContent = data.RAW_HOTSPOT;
-      } else {
-        rawHotspot.textContent = "--";
-      }
-
-      const hotspot = data.HOTSPOT;
-      const miteCount = numberOrNull(data.MITE_COUNT);
-
-      if (hotspot === "YES" || (miteCount !== null && miteCount > 0)) {
-        hiveStatus.textContent = "Possible Problem Area Detected";
-        hiveStatus.className = "large-status bad";
-
-        userMessage.textContent =
-          "The Raspberry Pi found cells with a 90th-percentile temperature difference inside the selected range. This is an estimate, so compare it with another reading and inspect the frame before making a conclusion.";
-      } else if (hotspot === "NO") {
-        hiveStatus.textContent = "Hive Looks Stable";
-        hiveStatus.className = "large-status";
-
-        userMessage.textContent =
-          "The cell-based temperature analysis did not find cells inside the selected infected range for this reading.";
-      } else {
-        hiveStatus.textContent = "Reading Hive Data";
-        hiveStatus.className = "large-status waiting";
-
-        userMessage.textContent =
-          "The app is connected and waiting for the Raspberry Pi to send analysis data.";
-      }
-    }
+  }
+}
+   
+  
 
     function friendlyError(error) {
       const text = String(error);
