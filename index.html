@@ -137,69 +137,10 @@
       font-weight: bold;
     }
 
-    .large-status {
-      text-align: center;
-      font-size: 22px;
-      font-weight: bold;
-      padding: 18px;
-      border-radius: 16px;
-      background: #eefaf1;
-      color: #1b7f3a;
-    }
-
-    .large-status.bad {
-      background: #fff1e8;
-      color: #c0392b;
-    }
-
-    .large-status.waiting {
-      background: #f4f4f4;
-      color: #777;
-    }
-
     .help-text {
       font-size: 14px;
       color: #6b5a25;
       line-height: 1.5;
-    }
-
-    .raw-data {
-      font-size: 12px;
-      color: #777;
-      word-break: break-word;
-      background: #f7f7f7;
-      padding: 10px;
-      border-radius: 10px;
-      margin-top: 10px;
-    }
-
-    .parameter-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-
-    .parameter-table tr {
-      border-bottom: 1px solid #f0e1aa;
-    }
-
-    .parameter-table tr:last-child {
-      border-bottom: none;
-    }
-
-    .parameter-table td {
-      padding: 9px 2px;
-      vertical-align: top;
-    }
-
-    .parameter-table td:first-child {
-      color: #7b6a2e;
-      width: 62%;
-    }
-
-    .parameter-table td:last-child {
-      text-align: right;
-      font-weight: bold;
     }
 
     .file-status {
@@ -257,8 +198,8 @@
     </div>
 
     <div class="card">
-      <h2>Hive Status</h2>
-      <div id="hiveStatus" class="large-status waiting">Waiting for data</div>
+      <h2>Messages</h2>
+      <p id="bluetoothMessage" class="help-text">Waiting for message from Raspberry Pi.</p>
     </div>
 
     <div class="card">
@@ -283,85 +224,7 @@
     </div>
 
     <div class="card">
-      <h2>Cell Analysis Parameters</h2>
-
-      <table class="parameter-table">
-        <tr>
-          <td>Normal brood temperature</td>
-          <td id="normalBroodTemp">-- °C</td>
-        </tr>
-        <tr>
-          <td>Measured average cell temperature</td>
-          <td id="measuredAvgCellTemp">-- °C</td>
-        </tr>
-        <tr>
-          <td>Normalization offset</td>
-          <td id="normalizationOffset">-- °C</td>
-        </tr>
-        <tr>
-          <td>Normalized average cell temperature</td>
-          <td id="normalizedAvgCellTemp">-- °C</td>
-        </tr>
-        <tr>
-          <td>Infected low threshold</td>
-          <td id="infectedLowThreshold">-- °C</td>
-        </tr>
-        <tr>
-          <td>Infected high threshold</td>
-          <td id="infectedHighThreshold">-- °C</td>
-        </tr>
-        <tr>
-          <td>Minimum 90th-percentile cell difference</td>
-          <td id="minCellHotDiff">-- °C</td>
-        </tr>
-        <tr>
-          <td>Maximum 90th-percentile cell difference</td>
-          <td id="maxCellHotDiff">-- °C</td>
-        </tr>
-        <tr>
-          <td>Cell grid size</td>
-          <td id="cellGrid">--</td>
-        </tr>
-      </table>
-    </div>
-
-    <div class="card">
-      <h2>Raw Sensor Parameters</h2>
-
-      <table class="parameter-table">
-        <tr>
-          <td>Raw minimum</td>
-          <td id="rawMin">--</td>
-        </tr>
-        <tr>
-          <td>Raw maximum</td>
-          <td id="rawMax">--</td>
-        </tr>
-        <tr>
-          <td>Raw difference</td>
-          <td id="rawDiff">--</td>
-        </tr>
-        <tr>
-          <td>2% display clipping temperature</td>
-          <td id="clipLow">-- °C</td>
-        </tr>
-        <tr>
-          <td>98% display clipping temperature</td>
-          <td id="clipHigh">-- °C</td>
-        </tr>
-        <tr>
-          <td>Raw hotspot check</td>
-          <td id="rawHotspot">--</td>
-        </tr>
-      </table>
-    </div>
-
-    <div class="card">
       <h2>Received Files</h2>
-
-      <p class="help-text">
-        The Raspberry Pi can send the CSV data and preview PGM image after each scan.
-      </p>
 
       <div class="file-status">
         CSV status: <span id="csvStatus">No CSV received yet</span>
@@ -377,19 +240,6 @@
 
       <a id="pgmDownload" class="download-link" download>Download PGM</a>
     </div>
-
-    <div class="card">
-      <h2>What this means</h2>
-      <p id="userMessage" class="help-text">
-        Press connect to begin receiving hive data.
-      </p>
-
-      <div class="raw-data">
-        Latest BLE message:
-        <br>
-        <span id="rawData">None yet</span>
-      </div>
-    </div>
   </div>
 
   <script>
@@ -399,30 +249,10 @@
     const connectBtn = document.getElementById("connectBtn");
     const statusDot = document.getElementById("statusDot");
     const statusText = document.getElementById("statusText");
-    const rawData = document.getElementById("rawData");
-
-    const hiveStatus = document.getElementById("hiveStatus");
     const maxTempBox = document.getElementById("maxTemp");
     const minTempBox = document.getElementById("minTemp");
     const miteCountBox = document.getElementById("miteCount");
-    const userMessage = document.getElementById("userMessage");
-
-    const normalBroodTemp = document.getElementById("normalBroodTemp");
-    const measuredAvgCellTemp = document.getElementById("measuredAvgCellTemp");
-    const normalizationOffset = document.getElementById("normalizationOffset");
-    const normalizedAvgCellTemp = document.getElementById("normalizedAvgCellTemp");
-    const infectedLowThreshold = document.getElementById("infectedLowThreshold");
-    const infectedHighThreshold = document.getElementById("infectedHighThreshold");
-    const minCellHotDiff = document.getElementById("minCellHotDiff");
-    const maxCellHotDiff = document.getElementById("maxCellHotDiff");
-    const cellGrid = document.getElementById("cellGrid");
-
-    const rawMin = document.getElementById("rawMin");
-    const rawMax = document.getElementById("rawMax");
-    const rawDiff = document.getElementById("rawDiff");
-    const clipLow = document.getElementById("clipLow");
-    const clipHigh = document.getElementById("clipHigh");
-    const rawHotspot = document.getElementById("rawHotspot");
+    const bluetoothMessage = document.getElementById("bluetoothMessage");
 
     const csvStatus = document.getElementById("csvStatus");
     const csvDownload = document.getElementById("csvDownload");
@@ -431,15 +261,7 @@
     const pgmDownload = document.getElementById("pgmDownload");
     const pgmCanvas = document.getElementById("pgmCanvas");
 
-    /*
-      latestData stores values across multiple BLE messages.
-      The Pi sends several shorter messages, so not every message contains every value.
-    */
     let latestData = {};
-
-    /*
-      fileTransfers stores temporary file chunks while a CSV or PGM is being received.
-    */
     let fileTransfers = {};
 
     function setConnectionStatus(type, message) {
@@ -516,14 +338,6 @@
       }
     }
 
-    function setTextIfPresent(data, key, element) {
-      if (!hasKey(data, key)) {
-        return;
-      }
-
-      element.textContent = data[key];
-    }
-
     function shortMessage(message) {
       if (message.length > 180) {
         return message.substring(0, 180) + "...";
@@ -533,56 +347,20 @@
     }
 
     function updateUserDisplay(message) {
-      rawData.textContent = shortMessage(message);
-
       const data = parseSensorMessage(message);
-
-      /*
-        Merge the newest values into latestData.
-        This lets values remain visible even when the Pi sends them in separate BLE messages.
-      */
       latestData = Object.assign(latestData, data);
 
       setNumberIfPresent(latestData, "MAX_TEMP", maxTempBox, 1, " °C");
       setNumberIfPresent(latestData, "MIN_TEMP", minTempBox, 1, " °C");
       setIntegerIfPresent(latestData, "MITE_COUNT", miteCountBox);
 
-      setNumberIfPresent(latestData, "NORMAL_BROOD_TEMP", normalBroodTemp, 2, " °C");
-      setNumberIfPresent(latestData, "MEASURED_AVG_CELL_TEMP", measuredAvgCellTemp, 2, " °C");
-      setNumberIfPresent(latestData, "NORMALIZATION_OFFSET", normalizationOffset, 2, " °C");
-      setNumberIfPresent(latestData, "NORMALIZED_AVG_CELL_TEMP", normalizedAvgCellTemp, 2, " °C");
-      setNumberIfPresent(latestData, "INFECTED_LOW_THRESHOLD", infectedLowThreshold, 2, " °C");
-      setNumberIfPresent(latestData, "INFECTED_HIGH_THRESHOLD", infectedHighThreshold, 2, " °C");
-      setNumberIfPresent(latestData, "MIN_CELL_HOT_DIFF", minCellHotDiff, 2, " °C");
-      setNumberIfPresent(latestData, "MAX_CELL_HOT_DIFF", maxCellHotDiff, 2, " °C");
+      /*
+        Send this from the Raspberry Pi to print a message in the Bluetooth Message card:
 
-      setIntegerIfPresent(latestData, "RAW_MIN", rawMin);
-      setIntegerIfPresent(latestData, "RAW_MAX", rawMax);
-      setIntegerIfPresent(latestData, "RAW_DIFF", rawDiff);
-
-      setNumberIfPresent(latestData, "CLIP_LOW", clipLow, 2, " °C");
-      setNumberIfPresent(latestData, "CLIP_HIGH", clipHigh, 2, " °C");
-
-      setTextIfPresent(latestData, "RAW_HOTSPOT", rawHotspot);
-
-      if (hasKey(latestData, "CELL_ROWS") && hasKey(latestData, "CELL_COLS")) {
-        cellGrid.textContent = latestData.CELL_ROWS + " rows × " + latestData.CELL_COLS + " columns";
-      }
-
-      if (hasKey(latestData, "HOTSPOT")) {
-        if (latestData.HOTSPOT === "YES") {
-          hiveStatus.textContent = "Possible Problem Area Detected";
-          hiveStatus.className = "large-status bad";
-
-          userMessage.textContent =
-            "The Raspberry Pi found cells with a 90th-percentile temperature difference inside the selected range. This is an estimate, so compare it with another reading and inspect the frame before making a conclusion.";
-        } else if (latestData.HOTSPOT === "NO") {
-          hiveStatus.textContent = "Hive Looks Stable";
-          hiveStatus.className = "large-status";
-
-          userMessage.textContent =
-            "The cell-based temperature analysis did not find cells inside the selected infected range for this reading.";
-        }
+        MESSAGE=your message here
+      */
+      if (hasKey(data, "MESSAGE")) {
+        bluetoothMessage.textContent = data.MESSAGE;
       }
     }
 
@@ -591,8 +369,6 @@
         csvStatus.textContent = message;
       } else if (tag === "PREVIEW_PGM") {
         pgmStatus.textContent = message;
-      } else {
-        userMessage.textContent = message;
       }
     }
 
@@ -699,17 +475,13 @@
     }
 
     function handleFileMessage(message) {
-      rawData.textContent = shortMessage(message);
-
       const type = message.trim().split(";")[0];
       const data = parseSensorMessage(message);
       const tag = data.TAG || "UNKNOWN";
 
       if (type === "FILE_BEGIN") {
         fileTransfers[tag] = {
-          tag: tag,
           name: data.NAME || tag,
-          size: Number(data.SIZE) || 0,
           chunks: [],
           receivedChunks: 0
         };
@@ -751,8 +523,7 @@
           return;
         }
 
-        const base64Text = transfer.chunks.join("");
-        const bytes = base64ToBytes(base64Text);
+        const bytes = base64ToBytes(transfer.chunks.join(""));
 
         let mimeType = "application/octet-stream";
 
@@ -765,21 +536,21 @@
         const blob = new Blob([bytes], { type: mimeType });
 
         if (tag === "RAW_CSV") {
-          makeDownloadLink(csvDownload, blob, transfer.name, "Download raw CSV");
+          makeDownloadLink(csvDownload, blob, transfer.name, "Download CSV");
           csvStatus.textContent = "CSV received: " + transfer.name;
         } else if (tag === "PREVIEW_PGM") {
-          makeDownloadLink(pgmDownload, blob, transfer.name, "Download preview PGM");
+          makeDownloadLink(pgmDownload, blob, transfer.name, "Download PGM");
           drawPgmPreview(bytes);
           pgmStatus.textContent = "PGM received: " + transfer.name;
         } else {
-          userMessage.textContent = "Received file: " + transfer.name;
+          bluetoothMessage.textContent = "Received file: " + transfer.name;
         }
 
         delete fileTransfers[tag];
         return;
       }
 
-      rawData.textContent = "Unknown file message: " + shortMessage(message);
+      bluetoothMessage.textContent = "Unknown file message received.";
     }
 
     function handleBleMessage(message) {
@@ -831,8 +602,7 @@
         device.addEventListener("gattserverdisconnected", () => {
           connectBtn.disabled = false;
           setConnectionStatus("error", "Disconnected");
-          userMessage.textContent =
-            "The hive sensor disconnected. Move closer to the Raspberry Pi or restart the Bluetooth program.";
+          bluetoothMessage.textContent = "Disconnected.";
         });
 
         const server = await device.gatt.connect();
@@ -850,15 +620,15 @@
           handleBleMessage(message);
         });
 
-        userMessage.textContent =
-          "Connected. Waiting for the Raspberry Pi to send hive data.";
+        bluetoothMessage.textContent =
+          "Connected. Waiting for message from Raspberry Pi.";
 
       } catch (error) {
         console.error(error);
 
         connectBtn.disabled = false;
         setConnectionStatus("error", "Connection problem");
-        userMessage.textContent = friendlyError(error);
+        bluetoothMessage.textContent = friendlyError(error);
       }
     });
   </script>
