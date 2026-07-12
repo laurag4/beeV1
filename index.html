@@ -14,7 +14,7 @@
     }
 
     .app {
-      max-width: 480px;
+      max-width: 520px;
       margin: 0 auto;
       min-height: 100vh;
       padding: 24px;
@@ -98,6 +98,7 @@
       font-weight: bold;
       cursor: pointer;
       box-shadow: 0 6px 12px rgba(120, 80, 0, 0.2);
+      margin-top: 10px;
     }
 
     button:hover {
@@ -107,6 +108,7 @@
     button:disabled {
       background: #c7c7c7;
       cursor: not-allowed;
+      box-shadow: none;
     }
 
     .data-grid {
@@ -150,32 +152,74 @@
       line-height: 1.4;
     }
 
-    .download-link {
+    .file-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .tile {
+      background: #fff8df;
+      border-radius: 14px;
+      padding: 10px;
+      text-align: center;
+      min-height: 138px;
+      box-sizing: border-box;
+    }
+
+    .tile-title {
+      font-size: 15px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .tile canvas {
       display: none;
       width: 100%;
-      box-sizing: border-box;
-      margin-top: 10px;
-      padding: 14px;
-      border-radius: 14px;
+      aspect-ratio: 4 / 3;
+      image-rendering: pixelated;
+      border-radius: 8px;
+      background: black;
+      margin-bottom: 6px;
+    }
+
+    .tile-status {
+      font-size: 12px;
+      color: #6b5a25;
+      min-height: 32px;
+    }
+
+    .mini-links {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .mini-links a {
+      display: none;
+      flex: 1;
+      padding: 7px 4px;
+      border-radius: 8px;
       background: #f5a400;
       color: white;
       text-align: center;
       text-decoration: none;
-      font-size: 16px;
+      font-size: 12px;
       font-weight: bold;
     }
 
-    .download-link:hover {
-      background: #e69500;
+    .bulk-buttons {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 14px;
     }
 
-    #pgmCanvas {
-      display: none;
-      width: 100%;
-      image-rendering: pixelated;
-      border-radius: 12px;
-      margin-top: 12px;
-      background: black;
+    .bulk-buttons button {
+      margin-top: 0;
+      font-size: 15px;
+      padding: 13px;
     }
   </style>
 </head>
@@ -198,7 +242,7 @@
     </div>
 
     <div class="card">
-      <h2>Messages</h2>
+      <h2>Bluetooth Message</h2>
       <p id="bluetoothMessage" class="help-text">Waiting for message from Raspberry Pi.</p>
     </div>
 
@@ -227,18 +271,76 @@
       <h2>Received Files</h2>
 
       <div class="file-status">
-        CSV status: <span id="csvStatus">No CSV received yet</span>
+        Layout: top row 3, 4, 5. Bottom row 2, 1, 6.
       </div>
 
-      <a id="csvDownload" class="download-link" download>Download CSV</a>
+      <div class="file-grid">
+        <div class="tile" id="tile3">
+          <div class="tile-title">Picture 3</div>
+          <canvas id="canvas3"></canvas>
+          <div class="tile-status" id="status3">Waiting</div>
+          <div class="mini-links">
+            <a id="csvLink3" download>CSV</a>
+            <a id="pgmLink3" download>PGM</a>
+          </div>
+        </div>
 
-      <div class="file-status">
-        PGM status: <span id="pgmStatus">No PGM received yet</span>
+        <div class="tile" id="tile4">
+          <div class="tile-title">Picture 4</div>
+          <canvas id="canvas4"></canvas>
+          <div class="tile-status" id="status4">Waiting</div>
+          <div class="mini-links">
+            <a id="csvLink4" download>CSV</a>
+            <a id="pgmLink4" download>PGM</a>
+          </div>
+        </div>
+
+        <div class="tile" id="tile5">
+          <div class="tile-title">Picture 5</div>
+          <canvas id="canvas5"></canvas>
+          <div class="tile-status" id="status5">Waiting</div>
+          <div class="mini-links">
+            <a id="csvLink5" download>CSV</a>
+            <a id="pgmLink5" download>PGM</a>
+          </div>
+        </div>
+
+        <div class="tile" id="tile2">
+          <div class="tile-title">Picture 2</div>
+          <canvas id="canvas2"></canvas>
+          <div class="tile-status" id="status2">Waiting</div>
+          <div class="mini-links">
+            <a id="csvLink2" download>CSV</a>
+            <a id="pgmLink2" download>PGM</a>
+          </div>
+        </div>
+
+        <div class="tile" id="tile1">
+          <div class="tile-title">Picture 1</div>
+          <canvas id="canvas1"></canvas>
+          <div class="tile-status" id="status1">Waiting</div>
+          <div class="mini-links">
+            <a id="csvLink1" download>CSV</a>
+            <a id="pgmLink1" download>PGM</a>
+          </div>
+        </div>
+
+        <div class="tile" id="tile6">
+          <div class="tile-title">Picture 6</div>
+          <canvas id="canvas6"></canvas>
+          <div class="tile-status" id="status6">Waiting</div>
+          <div class="mini-links">
+            <a id="csvLink6" download>CSV</a>
+            <a id="pgmLink6" download>PGM</a>
+          </div>
+        </div>
       </div>
 
-      <canvas id="pgmCanvas"></canvas>
-
-      <a id="pgmDownload" class="download-link" download>Download PGM</a>
+      <div class="bulk-buttons">
+        <button id="downloadCsvBtn" disabled>Download All CSV Files</button>
+        <button id="downloadPgmBtn" disabled>Download All PGM Files</button>
+        <button id="downloadAllBtn" disabled>Download All Files</button>
+      </div>
     </div>
   </div>
 
@@ -249,20 +351,20 @@
     const connectBtn = document.getElementById("connectBtn");
     const statusDot = document.getElementById("statusDot");
     const statusText = document.getElementById("statusText");
+    const bluetoothMessage = document.getElementById("bluetoothMessage");
+
     const maxTempBox = document.getElementById("maxTemp");
     const minTempBox = document.getElementById("minTemp");
     const miteCountBox = document.getElementById("miteCount");
-    const bluetoothMessage = document.getElementById("bluetoothMessage");
 
-    const csvStatus = document.getElementById("csvStatus");
-    const csvDownload = document.getElementById("csvDownload");
-
-    const pgmStatus = document.getElementById("pgmStatus");
-    const pgmDownload = document.getElementById("pgmDownload");
-    const pgmCanvas = document.getElementById("pgmCanvas");
+    const downloadCsvBtn = document.getElementById("downloadCsvBtn");
+    const downloadPgmBtn = document.getElementById("downloadPgmBtn");
+    const downloadAllBtn = document.getElementById("downloadAllBtn");
 
     let latestData = {};
     let fileTransfers = {};
+    let csvFiles = {};
+    let pgmFiles = {};
 
     function setConnectionStatus(type, message) {
       statusDot.className = "status-dot";
@@ -338,37 +440,29 @@
       }
     }
 
-    function shortMessage(message) {
-      if (message.length > 180) {
-        return message.substring(0, 180) + "...";
+    function getPictureNumber(data) {
+      const n = Number(data.PIC || data.PICTURE || data.INDEX || 0);
+
+      if (Number.isInteger(n) && n >= 1 && n <= 6) {
+        return n;
       }
 
-      return message;
+      return 0;
     }
 
-    function updateUserDisplay(message) {
-      const data = parseSensorMessage(message);
-      latestData = Object.assign(latestData, data);
-
-      setNumberIfPresent(latestData, "MAX_TEMP", maxTempBox, 1, " °C");
-      setNumberIfPresent(latestData, "MIN_TEMP", minTempBox, 1, " °C");
-      setIntegerIfPresent(latestData, "MITE_COUNT", miteCountBox);
-
-      /*
-        Send this from the Raspberry Pi to print a message in the Bluetooth Message card:
-
-        MESSAGE=your message here
-      */
-      if (hasKey(data, "MESSAGE")) {
-        bluetoothMessage.textContent = data.MESSAGE;
-      }
+    function getTransferKey(tag, pic) {
+      return tag + "_" + String(pic);
     }
 
-    function setFileStatus(tag, message) {
-      if (tag === "RAW_CSV") {
-        csvStatus.textContent = message;
-      } else if (tag === "PREVIEW_PGM") {
-        pgmStatus.textContent = message;
+    function getPictureStatus(pic) {
+      return document.getElementById("status" + pic);
+    }
+
+    function setPictureStatus(pic, text) {
+      const status = getPictureStatus(pic);
+
+      if (status) {
+        status.textContent = text;
       }
     }
 
@@ -384,13 +478,70 @@
     }
 
     function makeDownloadLink(element, blob, filename, label) {
+      const oldUrl = element.dataset.url;
+
+      if (oldUrl) {
+        URL.revokeObjectURL(oldUrl);
+      }
+
       const url = URL.createObjectURL(blob);
 
       element.href = url;
+      element.dataset.url = url;
       element.download = filename;
       element.textContent = label;
       element.style.display = "block";
     }
+
+    function updateBulkButtons() {
+      const csvCount = Object.keys(csvFiles).length;
+      const pgmCount = Object.keys(pgmFiles).length;
+
+      downloadCsvBtn.disabled = csvCount === 0;
+      downloadPgmBtn.disabled = pgmCount === 0;
+      downloadAllBtn.disabled = csvCount + pgmCount === 0;
+    }
+
+    function downloadFileRecord(fileRecord) {
+      const a = document.createElement("a");
+      a.href = fileRecord.url;
+      a.download = fileRecord.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function downloadFileList(fileList) {
+      fileList.forEach((fileRecord, index) => {
+        setTimeout(() => {
+          downloadFileRecord(fileRecord);
+        }, index * 300);
+      });
+    }
+
+    function orderedRecords(source) {
+      const records = [];
+
+      for (let pic = 1; pic <= 6; pic++) {
+        if (source[pic]) {
+          records.push(source[pic]);
+        }
+      }
+
+      return records;
+    }
+
+    downloadCsvBtn.addEventListener("click", () => {
+      downloadFileList(orderedRecords(csvFiles));
+    });
+
+    downloadPgmBtn.addEventListener("click", () => {
+      downloadFileList(orderedRecords(pgmFiles));
+    });
+
+    downloadAllBtn.addEventListener("click", () => {
+      downloadFileList(orderedRecords(csvFiles).concat(orderedRecords(pgmFiles)));
+    });
 
     function readPgmToken(bytes, state) {
       while (state.index < bytes.length) {
@@ -423,7 +574,13 @@
       return token;
     }
 
-    function drawPgmPreview(bytes) {
+    function drawPgmPreview(bytes, pic) {
+      const canvas = document.getElementById("canvas" + pic);
+
+      if (!canvas) {
+        return;
+      }
+
       const state = { index: 0 };
 
       const magic = readPgmToken(bytes, state);
@@ -432,7 +589,7 @@
       const maxValue = Number(readPgmToken(bytes, state));
 
       if (magic !== "P5" || !Number.isFinite(width) || !Number.isFinite(height) || !Number.isFinite(maxValue)) {
-        pgmStatus.textContent = "PGM received, but the preview format was not recognized.";
+        setPictureStatus(pic, "PGM received, but preview format was not recognized.");
         return;
       }
 
@@ -450,15 +607,15 @@
       const pixelCount = width * height;
 
       if (bytes.length < pixelStart + pixelCount) {
-        pgmStatus.textContent = "PGM received, but the image data was incomplete.";
+        setPictureStatus(pic, "PGM received, but image data was incomplete.");
         return;
       }
 
-      pgmCanvas.width = width;
-      pgmCanvas.height = height;
-      pgmCanvas.style.display = "block";
+      canvas.width = width;
+      canvas.height = height;
+      canvas.style.display = "block";
 
-      const ctx = pgmCanvas.getContext("2d");
+      const ctx = canvas.getContext("2d");
       const imageData = ctx.createImageData(width, height);
 
       for (let i = 0; i < pixelCount; i++) {
@@ -474,34 +631,56 @@
       ctx.putImageData(imageData, 0, 0);
     }
 
+    function updateUserDisplay(message) {
+      const data = parseSensorMessage(message);
+      latestData = Object.assign(latestData, data);
+
+      setNumberIfPresent(latestData, "MAX_TEMP", maxTempBox, 1, " °C");
+      setNumberIfPresent(latestData, "MIN_TEMP", minTempBox, 1, " °C");
+      setIntegerIfPresent(latestData, "MITE_COUNT", miteCountBox);
+
+      if (hasKey(data, "MESSAGE")) {
+        bluetoothMessage.textContent = data.MESSAGE;
+      }
+    }
+
     function handleFileMessage(message) {
       const type = message.trim().split(";")[0];
       const data = parseSensorMessage(message);
       const tag = data.TAG || "UNKNOWN";
+      const pic = getPictureNumber(data);
+      const key = getTransferKey(tag, pic);
+
+      if (pic === 0) {
+        bluetoothMessage.textContent = "File message missing PIC number.";
+        return;
+      }
 
       if (type === "FILE_BEGIN") {
-        fileTransfers[tag] = {
-          name: data.NAME || tag,
+        fileTransfers[key] = {
+          tag: tag,
+          pic: pic,
+          name: data.NAME || (tag + "_picture_" + pic),
           chunks: [],
           receivedChunks: 0
         };
 
-        setFileStatus(tag, "Receiving " + fileTransfers[tag].name + "...");
+        setPictureStatus(pic, "Receiving " + tag + "...");
         return;
       }
 
       if (type === "FILE_CHUNK") {
-        const transfer = fileTransfers[tag];
+        const transfer = fileTransfers[key];
 
         if (!transfer) {
-          setFileStatus(tag, "Received a file chunk before FILE_BEGIN.");
+          setPictureStatus(pic, "Chunk received before FILE_BEGIN.");
           return;
         }
 
         const seq = Number(data.SEQ);
 
         if (!Number.isFinite(seq)) {
-          setFileStatus(tag, "Received a file chunk with a bad sequence number.");
+          setPictureStatus(pic, "Bad chunk sequence number.");
           return;
         }
 
@@ -509,22 +688,21 @@
         transfer.receivedChunks++;
 
         if (transfer.receivedChunks % 10 === 0) {
-          setFileStatus(tag, "Receiving " + transfer.name + " (" + transfer.receivedChunks + " chunks)...");
+          setPictureStatus(pic, "Receiving " + transfer.tag + " (" + transfer.receivedChunks + " chunks)...");
         }
 
         return;
       }
 
       if (type === "FILE_END") {
-        const transfer = fileTransfers[tag];
+        const transfer = fileTransfers[key];
 
         if (!transfer) {
-          setFileStatus(tag, "Received FILE_END before FILE_BEGIN.");
+          setPictureStatus(pic, "FILE_END received before FILE_BEGIN.");
           return;
         }
 
         const bytes = base64ToBytes(transfer.chunks.join(""));
-
         let mimeType = "application/octet-stream";
 
         if (tag === "RAW_CSV") {
@@ -534,19 +712,40 @@
         }
 
         const blob = new Blob([bytes], { type: mimeType });
+        const url = URL.createObjectURL(blob);
 
         if (tag === "RAW_CSV") {
-          makeDownloadLink(csvDownload, blob, transfer.name, "Download CSV");
-          csvStatus.textContent = "CSV received: " + transfer.name;
+          const link = document.getElementById("csvLink" + pic);
+
+          csvFiles[pic] = {
+            name: transfer.name,
+            blob: blob,
+            url: url
+          };
+
+          makeDownloadLink(link, blob, transfer.name, "CSV");
+          setPictureStatus(pic, "CSV received.");
         } else if (tag === "PREVIEW_PGM") {
-          makeDownloadLink(pgmDownload, blob, transfer.name, "Download PGM");
-          drawPgmPreview(bytes);
-          pgmStatus.textContent = "PGM received: " + transfer.name;
-        } else {
-          bluetoothMessage.textContent = "Received file: " + transfer.name;
+          const link = document.getElementById("pgmLink" + pic);
+
+          pgmFiles[pic] = {
+            name: transfer.name,
+            blob: blob,
+            url: url
+          };
+
+          makeDownloadLink(link, blob, transfer.name, "PGM");
+          drawPgmPreview(bytes, pic);
+
+          if (csvFiles[pic]) {
+            setPictureStatus(pic, "CSV and PGM received.");
+          } else {
+            setPictureStatus(pic, "PGM received.");
+          }
         }
 
-        delete fileTransfers[tag];
+        delete fileTransfers[key];
+        updateBulkButtons();
         return;
       }
 
@@ -602,7 +801,8 @@
         device.addEventListener("gattserverdisconnected", () => {
           connectBtn.disabled = false;
           setConnectionStatus("error", "Disconnected");
-          bluetoothMessage.textContent = "Disconnected.";
+          bluetoothMessage.textContent =
+            "Disconnected from Raspberry Pi.";
         });
 
         const server = await device.gatt.connect();
