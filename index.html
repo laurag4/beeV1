@@ -281,10 +281,6 @@
     <div class="card">
       <h2>Received Files</h2>
 
-      <div class="file-status">
-        Layout: top row 3, 4, 5. Bottom row 2, 1, 6.
-      </div>
-
       <div class="file-grid">
         <div class="tile" id="tile3">
           <div class="tile-title">Picture 3</div>
@@ -353,7 +349,7 @@
         <button id="downloadAllBtn" disabled>Download All Files</button>
       </div>
     </div>
-    
+
     <div class="card">
       <h2>Main Results</h2>
 
@@ -374,7 +370,6 @@
         </div>
       </div>
     </div>
-
   </div>
 
   <script>
@@ -868,6 +863,7 @@
         setConnectionStatus("connected", "Connected to hive sensor");
 
         await characteristic.startNotifications();
+        await characteristic.readValue();
 
         characteristic.addEventListener("characteristicvaluechanged", event => {
           const value = event.target.value;
