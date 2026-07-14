@@ -145,6 +145,33 @@
       line-height: 1.5;
     }
 
+    .message-log {
+      max-height: 180px;
+      overflow-y: auto;
+      background: #fff8df;
+      border-radius: 14px;
+      padding: 10px;
+      font-size: 14px;
+      line-height: 1.4;
+      color: #2c2105;
+    }
+
+    .message-entry {
+      padding: 7px 0;
+      border-bottom: 1px solid #f0e1aa;
+    }
+
+    .message-entry:last-child {
+      border-bottom: none;
+    }
+
+    .message-time {
+      display: block;
+      font-size: 11px;
+      color: #7b6a2e;
+      margin-bottom: 2px;
+    }
+
     .file-status {
       font-size: 14px;
       color: #6b5a25;
@@ -242,12 +269,22 @@
     </div>
 
     <div class="card">
-      <h2>Bluetooth Message</h2>
-      <p id="bluetoothMessage" class="help-text">Waiting for message from Raspberry Pi.</p>
+      <h2>Bluetooth Messages</h2>
+      <div id="bluetoothMessageLog" class="message-log">
+        <div class="message-entry">
+          <span class="message-time">Startup</span>
+          Waiting for message from Raspberry Pi.
+        </div>
+      </div>
     </div>
 
     <div class="card">
       <h2>Received Files</h2>
+
+      <div class="file-status">
+        Layout: top row 3, 4, 5. Bottom row 2, 1, 6.
+      </div>
+
       <div class="file-grid">
         <div class="tile" id="tile3">
           <div class="tile-title">Picture 3</div>
@@ -316,7 +353,8 @@
         <button id="downloadAllBtn" disabled>Download All Files</button>
       </div>
     </div>
-  <div class="card">
+    
+    <div class="card">
       <h2>Main Results</h2>
 
       <div class="data-grid">
@@ -336,7 +374,9 @@
         </div>
       </div>
     </div>
+
   </div>
+
   <script>
     const SERVICE_UUID = "12345678-1234-5678-1234-56789abcdef0";
     const CHAR_UUID = "abcdef01-1234-5678-1234-56789abcdef0";
@@ -344,7 +384,7 @@
     const connectBtn = document.getElementById("connectBtn");
     const statusDot = document.getElementById("statusDot");
     const statusText = document.getElementById("statusText");
-    const bluetoothMessage = document.getElementById("bluetoothMessage");
+    const bluetoothMessageLog = document.getElementById("bluetoothMessageLog");
 
     const maxTempBox = document.getElementById("maxTemp");
     const minTempBox = document.getElementById("minTemp");
@@ -371,6 +411,30 @@
       }
 
       statusText.textContent = message;
+    }
+
+    function addBluetoothMessage(message) {
+      const entry = document.createElement("div");
+      entry.className = "message-entry";
+
+      const time = document.createElement("span");
+      time.className = "message-time";
+      time.textContent = new Date().toLocaleTimeString();
+
+      const text = document.createElement("span");
+      text.textContent = message;
+
+      entry.appendChild(time);
+      entry.appendChild(text);
+
+      bluetoothMessageLog.insertBefore(entry, bluetoothMessageLog.firstChild);
+
+      /*
+        Keep only the newest 30 messages so the page does not grow forever.
+      */
+      while (bluetoothMessageLog.children.length > 30) {
+        bluetoothMessageLog.removeChild(bluetoothMessageLog.lastChild);
+      }
     }
 
     function parseSensorMessage(message) {
@@ -633,7 +697,7 @@
       setIntegerIfPresent(latestData, "MITE_COUNT", miteCountBox);
 
       if (hasKey(data, "MESSAGE")) {
-        bluetoothMessage.textContent = data.MESSAGE;
+        addBluetoothMessage(data.MESSAGE);
       }
     }
 
@@ -645,7 +709,7 @@
       const key = getTransferKey(tag, pic);
 
       if (pic === 0) {
-        bluetoothMessage.textContent = "File message missing PIC number.";
+        addBluetoothMessage("File message missing PIC number.");
         return;
       }
 
@@ -742,7 +806,7 @@
         return;
       }
 
-      bluetoothMessage.textContent = "Unknown file message received.";
+      addBluetoothMessage("Unknown file message received.");
     }
 
     function handleBleMessage(message) {
@@ -794,8 +858,7 @@
         device.addEventListener("gattserverdisconnected", () => {
           connectBtn.disabled = false;
           setConnectionStatus("error", "Disconnected");
-          bluetoothMessage.textContent =
-            "Disconnected from Raspberry Pi.";
+          addBluetoothMessage("Disconnected from Raspberry Pi.");
         });
 
         const server = await device.gatt.connect();
@@ -813,15 +876,14 @@
           handleBleMessage(message);
         });
 
-        bluetoothMessage.textContent =
-          "Connected. Waiting for message from Raspberry Pi.";
+        addBluetoothMessage("Connected. Waiting for message from Raspberry Pi.");
 
       } catch (error) {
         console.error(error);
 
         connectBtn.disabled = false;
         setConnectionStatus("error", "Connection problem");
-        bluetoothMessage.textContent = friendlyError(error);
+        addBluetoothMessage(friendlyError(error));
       }
     });
   </script>
