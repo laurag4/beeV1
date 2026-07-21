@@ -858,19 +858,21 @@
         const service = await server.getPrimaryService(SERVICE_UUID);
         const characteristic = await service.getCharacteristic(CHAR_UUID);
 
+        characteristic.addEventListener("characteristicvaluechanged", event => {
+          const value = event.target.value;
+          const message = new TextDecoder().decode(value).trim();
+        
+          console.log("BLE received:", message);
+        
+          handleBleMessage(message);
+        });
+        
         setConnectionStatus("connected", "Connected to hive sensor");
-
+        
         await characteristic.startNotifications();
         await characteristic.readValue();
 
-        characteristic.addEventListener("characteristicvaluechanged", event => {
-          const value = event.target.value;
-          const message = new TextDecoder().decode(value);
-
-          handleBleMessage(message);
-        });
-
-        addBluetoothMessage("Connected. Waiting for message from Raspberry Pi.");
+        addBluetoothMessage("Connected.");
 
       } catch (error) {
         console.error(error);
