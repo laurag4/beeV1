@@ -391,6 +391,7 @@
     let fileTransfers = {};
     let csvFiles = {};
     let pgmFiles = {};
+    let heartbeatTimer = null;
 
     function setConnectionStatus(type, message) {
       statusDot.className = "status-dot";
@@ -404,6 +405,24 @@
       }
 
       statusText.textContent = message;
+    }
+
+    function shouldDisplayMessage(message) {
+      if (!message) {
+        return false;
+      }
+
+      const text = message.trim();
+
+      if (text === "WAITING_FOR_C_DATA") {
+        return false;
+      }
+
+      if (text === "MESSAGE=WAITING_FOR_C_DATA") {
+        return false;
+      }
+
+      return true;
     }
 
     function addBluetoothMessage(message) {
@@ -849,6 +868,11 @@
         setConnectionStatus("warning", "Connecting...");
 
         device.addEventListener("gattserverdisconnected", () => {
+          if (heartbeatTimer) {
+            clearInterval(heartbeatTimer);
+            heartbeatTimer = null;
+          }
+
           connectBtn.disabled = false;
           setConnectionStatus("error", "Disconnected");
           addBluetoothMessage("Disconnected from Raspberry Pi.");
@@ -861,18 +885,39 @@
         characteristic.addEventListener("characteristicvaluechanged", event => {
           const value = event.target.value;
           const message = new TextDecoder().decode(value).trim();
-        
+
           console.log("BLE received:", message);
-        
+
+          if (!shouldDisplayMessage(message)) {
+            return;
+          }
+
           handleBleMessage(message);
         });
-        
+
         setConnectionStatus("connected", "Connected to hive sensor");
-        
+
         await characteristic.startNotifications();
         await characteristic.readValue();
 
-        addBluetoothMessage("Connected.");
+        if (heartbeatTimer) {
+          clearInterval(heartbeatTimer);
+        }
+
+        heartbeatTimer = setInterval(async () => {
+          try {
+            await characteristic.readValue();
+          } catch (error) {
+            clearInterval(heartbeatTimer);
+            heartbeatTimer = null;
+
+            connectBtn.disabled = false;
+            setConnectionStatus("error", "Disconnected");
+            addBluetoothMessage("Bluetooth connection lost.");
+          }
+        }, 1000);
+
+        addBluetoothMessage("Connected. Waiting for message from Raspberry Pi.");
 
       } catch (error) {
         console.error(error);
